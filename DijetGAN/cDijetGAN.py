@@ -22,7 +22,7 @@ TESTING = False
 # Network hyperparameters from arXiv:1903.02433
 
 # Training
-BATCH_SIZE = 32 # 128 in paper
+BATCH_SIZE = 64 # 128 in paper, 32 in Gitlab
 EPOCHS = 1000 # 500000 in paper, but on much smaller dataset
 PRETRAIN_EPOCHS = 20
 
@@ -243,11 +243,11 @@ def generator_loss(fake_output):
     return mse(tf.ones_like(fake_output), fake_output)
 
 # Paper optimizer:
-# generator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_1, beta_2=BETA_2)
-# discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_1, beta_2=BETA_2)
+generator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_1, beta_2=BETA_2)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_1, beta_2=BETA_2)
 
-generator_optimizer = tf.keras.optimizers.SGD(SGD_LEARNING_RATE)
-discriminator_optimizer = tf.keras.optimizers.SGD(SGD_LEARNING_RATE)
+# generator_optimizer = tf.keras.optimizers.SGD(SGD_LEARNING_RATE)
+# discriminator_optimizer = tf.keras.optimizers.SGD(SGD_LEARNING_RATE)
 
 
 # Convert tensor to float for loss function plotting
@@ -330,6 +330,42 @@ def sample_labels(refdata = np_bg_SB, size = BATCH_SIZE):
     rand_idx = np.random.choice(refdata.shape[0], size = size)
     return refdata[rand_idx, -1].reshape((-1,1))
 
+def mjj(output):
+    pt1 = output[:,0]
+    eta1 = output[:,1]
+    m1 = output[:,2]
+    pt2 = output[:,3]
+    eta2 = output[:,4]
+    phi2 = output[:,5]
+    m2 = output[:,6]
+    ejj = np.sqrt((pt1 * np.cosh(eta1))**2 + m1**2) + np.sqrt((pt2 * np.cosh(eta2))**2 + m2**2)
+    pxjj = pt1 + pt2 * np.cos(phi2)
+    pyjj = pt2 * np.sin(phi2)
+    pzjj = pt1 * np.sinh(eta1) + pt2 * np.sinh(eta2)
+    return np.sqrt(ejj**2 - pxjj**2 - pyjj**2 - pzjj**2)
+
+def graph_mjj(generator, epoch):
+    plt.close()
+    labels = np.linspace(2000, 5000, num = SAMPLE_SIZE)
+    labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
+
+    fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
+    fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
+    fakedata = cut_data(fakedata_uncut)
+    fakedata_mjj = mjj(fakedata)
+
+    plt.title("GAN $m_{JJ}$ condition")
+    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[2000, 5000], [2000, 5000]], cmap = "inferno")
+    plt.ylabel("GAN mjj")
+    plt.xlabel("Input mjj")
+    plt.colorbar()
+
+    if TESTING:
+        plt.show()
+    else:
+        plt.savefig("{}epoch{}-mjj.png".format(PREFIX, epoch))
+
+
 def graph_gan(generator, epoch, mode = "bg_SB"):
     plt.close()
 
@@ -364,6 +400,9 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
 
     # At least one jet has pT > 1200 and |eta| < 2.5
     fakedata = cut_data(fakedata_uncut)
+
+    # mjj = sqrt(Ejj**2 - pxjj**2 - pyjj**2 - pzjj**2)
+    fakedata_mjj = mjj(fakedata)
     
     f, a = plt.subplots(3, 3, constrained_layout=True)
 
@@ -412,7 +451,7 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
     a[2, 2].hist(realdata[:,9], bins = BINS, range = (1500, 5500), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 2].hist(fakedata[:,9], bins = BINS, range = (1500, 5500), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (1500, 5500), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
     # a[2, 2].legend(loc="right") # Too cramped
 
     if TESTING:
@@ -450,8 +489,6 @@ def graph_losses(epoch):
         plt.show()
     else:
         plt.savefig("{}epoch{}-loss.png".format(PREFIX, epoch))
-
-# TODO: Pre-train discriminator
 
 def train(dataset, testset, epochs, pretrain = False):
     for epoch in tqdm(range(epochs)):
