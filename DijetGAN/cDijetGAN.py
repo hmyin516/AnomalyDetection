@@ -17,7 +17,7 @@ print("Using {}".format(physical_devices[0]))
 
 tf.random.set_seed(1234)
 
-TESTING = False
+TESTING = True
 
 # Network hyperparameters from arXiv:1903.02433
 
@@ -47,9 +47,9 @@ else:
     SAMPLE_SIZE = 20000
 
 filenames = {
-    "herwig": "GAN-data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
-    "pythiabg": "GAN-data/events_anomalydetection_DelphesPythia8_v2_qcd_features.h5",
-    "pythiasig": "GAN-data/events_anomalydetection_DelphesPythia8_v2_Wprime_features.h5"
+    "herwig": "data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
+    "pythiabg": "data/events_anomalydetection_DelphesPythia8_v2_qcd_features.h5",
+    "pythiasig": "data/events_anomalydetection_DelphesPythia8_v2_Wprime_features.h5"
 }
 
 datatypes = ["herwig", "pythiabg", "pythiasig"]
@@ -551,6 +551,7 @@ def train(dataset, testset, epochs, pretrain = False):
             graph_gan(generator, epoch + 1, mode = "bg_SR")
             graph_gan(generator, epoch + 1, mode = "sig_SR")
             graph_gan(generator, epoch + 1, mode = "combined_SR")
+            graph_mjj(generator, epoch + 1)
             graph_losses(epoch + 1)
 
 print("Now pre-training discriminator for {} epochs".format(PRETRAIN_EPOCHS))
