@@ -17,7 +17,7 @@ print("Using {}".format(physical_devices[0]))
 
 tf.random.set_seed(1234)
 
-TESTING = True
+TESTING = False
 
 # Network hyperparameters from arXiv:1903.02433
 
