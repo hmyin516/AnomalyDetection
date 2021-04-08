@@ -22,9 +22,9 @@ TESTING = False
 # Network hyperparameters from arXiv:1903.02433
 
 # Training
-BATCH_SIZE = 64 # 128 in paper, 32 in Gitlab
+BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
 EPOCHS = 1000 # 500000 in paper, but on much smaller dataset
-PRETRAIN_EPOCHS = 20
+PRETRAIN_EPOCHS = 30
 
 # Adam hyperparameters
 LEARNING_RATE = 1e-5 # TODO: Learning rate scheduler
@@ -47,9 +47,9 @@ else:
     SAMPLE_SIZE = 20000
 
 filenames = {
-    "herwig": "data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
-    "pythiabg": "data/events_anomalydetection_DelphesPythia8_v2_qcd_features.h5",
-    "pythiasig": "data/events_anomalydetection_DelphesPythia8_v2_Wprime_features.h5"
+    "herwig": "GAN-data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
+    "pythiabg": "GAN-data/events_anomalydetection_DelphesPythia8_v2_qcd_features.h5",
+    "pythiasig": "GAN-data/events_anomalydetection_DelphesPythia8_v2_Wprime_features.h5"
 }
 
 datatypes = ["herwig", "pythiabg", "pythiasig"]
@@ -117,10 +117,10 @@ else:
     df_bg = load_data("pythiabg")
     df_sig = load_data("pythiasig")
 
-df_bg_SB = df_bg[(df_bg["mjj"] < 3300) | (df_bg["mjj"] > 3700)]
+df_bg_SB = df_bg[((df_bg["mjj"] > 2500) & (df_bg["mjj"] < 3300)) | ((df_bg["mjj"] > 3700) & (df_bg["mjj"] < 4500))]
 df_bg_SR = df_bg[(df_bg["mjj"] >= 3300) & (df_bg["mjj"] <= 3700)]
 
-df_sig_SB = df_sig[(df_sig["mjj"] < 3300) | (df_sig["mjj"] > 3700)] # This should pretty much be empty
+df_sig_SB = df_sig[((df_sig["mjj"] > 2500) & (df_sig["mjj"] < 3300)) | ((df_sig["mjj"] > 3700) & (df_sig["mjj"] < 4500))] # This should pretty much be empty
 df_sig_SR = df_sig[(df_sig["mjj"] >= 3300) & (df_sig["mjj"] <= 3700)]
 
 df_bg_SB.reset_index(drop = True, inplace = True)
