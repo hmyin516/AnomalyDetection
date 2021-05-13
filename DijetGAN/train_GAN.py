@@ -345,8 +345,8 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
 
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
-    a[2, 2].hist(realdata[:,9], bins = BINS, range = (3100, 3700), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3100, 3700), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    a[2, 2].hist(realdata[:,9], bins = BINS, range = (3100, 3900), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3100, 3900), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
     # a[2, 2].legend(loc="right") # Too cramped
 
     if TESTING:
@@ -362,7 +362,7 @@ test_disc_losses = []
 
 def graph_mjj(generator, epoch):
     plt.close()
-    labels = np.linspace(2000, 5000, num = SAMPLE_SIZE)
+    labels = np.linspace(3100, 3900, num = SAMPLE_SIZE)
     labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
 
     fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
@@ -371,7 +371,7 @@ def graph_mjj(generator, epoch):
     fakedata_mjj = mjj(fakedata)
 
     plt.title("GAN $m_{JJ}$ condition")
-    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[2000, 5000], [2000, 5000]], cmap = "inferno")
+    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[3100, 3900], [3100, 3900]], cmap = "inferno")
     plt.ylabel("GAN mjj")
     plt.xlabel("Input mjj")
     plt.colorbar()
