@@ -54,10 +54,10 @@ features = train_features + condition_features
 GEN_DIM = NOISE_DIM + len(condition_features)
 DISC_DIM = len(features)
 
-np_bg_SB = np.load(file_prefix + "np_bg_SB")
-np_bg_SR = np.load(file_prefix + "np_bg_SR")
-np_sig_SB = np.load(file_prefix + "np_sig_SB")
-np_sig_SR = np.load(file_prefix + "np_sig_SR")
+np_bg_SB = np.load(file_prefix + "np_bg_SB.npy")
+np_bg_SR = np.load(file_prefix + "np_bg_SR.npy")
+np_sig_SB = np.load(file_prefix + "np_sig_SB.npy")
+np_sig_SR = np.load(file_prefix + "np_sig_SR.npy")
 
 # Ensures all training batches have same size
 np_bg_SB_trimmed = np.delete(np_bg_SB, [i for i in range(np_bg_SB.shape[0] % (BATCH_SIZE * 4))], axis = 0)
