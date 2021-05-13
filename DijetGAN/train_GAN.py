@@ -59,8 +59,13 @@ np_bg_SR = np.load(file_prefix + "np_bg_SR.npy")
 np_sig_SB = np.load(file_prefix + "np_sig_SB.npy")
 np_sig_SR = np.load(file_prefix + "np_sig_SR.npy")
 
+np_combined_SB = np.concatenate((np_bg_SB, np_sig_SB), axis = 0)
+np_combined_SR = np.concatenate((np_bg_SR, np_sig_SR), axis = 0)
+
 # Ensures all training batches have same size
 np_bg_SB_trimmed = np.delete(np_bg_SB, [i for i in range(np_bg_SB.shape[0] % (BATCH_SIZE * 4))], axis = 0)
+
+# TODO: train different GANs for different S/B ratios (signal contamination in sidebands)
 
 # Normalize inputs between -1 and 1, mjj between 0 and 1
 scaler = MinMaxScaler((-1,1)).fit(np_bg_SB_trimmed[:,:-1])
