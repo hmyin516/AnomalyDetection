@@ -45,7 +45,7 @@ if TESTING:
 else:
     SAMPLE_SIZE = 20000
 
-file_prefix = "../data/processed/np_"
+file_prefix = "../data/processed/"
 
 train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2"]
 condition_features = ["mjj"]
