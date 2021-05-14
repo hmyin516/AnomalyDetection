@@ -21,8 +21,8 @@ TESTING = False
 
 # Training
 BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
-EPOCHS = 300 # 500000 in paper, but on much smaller dataset
-PRETRAIN_EPOCHS = 30
+EPOCHS = 1000 # 500000 in paper, but on much smaller dataset
+PRETRAIN_EPOCHS = 50
 
 # Adam hyperparameters
 LEARNING_RATE = 1e-5 # TODO: Learning rate scheduler
@@ -37,8 +37,8 @@ NOISE_DIM = 128 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}D-{}batchsize-".format(NOISE_DIM, BATCH_SIZE)
-DRAW_INTERVAL = 10
-SAVE_INTERVAL = 25
+DRAW_INTERVAL = 50
+SAVE_INTERVAL = 100
 BINS = 40
 if TESTING:
     SAMPLE_SIZE = 2000
