@@ -4,6 +4,8 @@ import gc
 
 TESTING = False
 
+SB_WIDTH = 1
+
 filenames = {
     "herwig": "../data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
     "pythiabg": "../data/events_anomalydetection_DelphesPythia8_v2_qcd_features.h5",
@@ -75,11 +77,20 @@ else:
 
 # Define sidebands and signal region
 
-df_bg_SB = df_bg[((df_bg["mjj"] > 3100) & (df_bg["mjj"] < 3300)) | ((df_bg["mjj"] > 3700) & (df_bg["mjj"] < 3900))]
-df_bg_SR = df_bg[(df_bg["mjj"] >= 3300) & (df_bg["mjj"] <= 3700)]
+sr_center = 3500
+sr_width = 200
 
-df_sig_SB = df_sig[((df_sig["mjj"] > 3100) & (df_sig["mjj"] < 3300)) | ((df_sig["mjj"] > 3700) & (df_sig["mjj"] < 3900))] # This should pretty much be empty
-df_sig_SR = df_sig[(df_sig["mjj"] >= 3300) & (df_sig["mjj"] <= 3700)]
+sr_left = sr_center - sr_width
+sr_right = sr_center + sr_width
+
+sb_left = sr_left - sr_width * SB_WIDTH
+sb_right = sr_right + sr_width * SB_WIDTH
+
+df_bg_SB = df_bg[((df_bg["mjj"] > sb_left) & (df_bg["mjj"] < sr_left)) | ((df_bg["mjj"] > sr_right) & (df_bg["mjj"] < sb_right))]
+df_bg_SR = df_bg[(df_bg["mjj"] >= sr_left) & (df_bg["mjj"] <= sr_right)]
+
+df_sig_SB = df_sig[((df_sig["mjj"] > sb_left) & (df_sig["mjj"] < sr_left)) | ((df_sig["mjj"] > sr_right) & (df_sig["mjj"] < sb_right))] # This should pretty much be empty
+df_sig_SR = df_sig[(df_sig["mjj"] >= sr_left) & (df_sig["mjj"] <= sr_right)]
 
 for df in [df_bg_SB, df_bg_SR, df_sig_SB, df_sig_SR]:
     df.reset_index(drop = True, inplace = True)
@@ -111,10 +122,10 @@ del df_sig_SB
 del df_sig_SR
 gc.collect()
 
-np.save("../data/processed/np_bg_SB.npy", np_bg_SB)
-np.save("../data/processed/np_bg_SR.npy", np_bg_SR)
-np.save("../data/processed/np_sig_SB.npy", np_sig_SB)
-np.save("../data/processed/np_sig_SR.npy", np_sig_SR)
+np.save("../data/processed/np_bg_SB_" + str(SB_WIDTH) + ".npy", np_bg_SB)
+np.save("../data/processed/np_bg_SR_" + str(SB_WIDTH) + ".npy", np_bg_SR)
+np.save("../data/processed/np_sig_SB_" + str(SB_WIDTH) + ".npy", np_sig_SB)
+np.save("../data/processed/np_sig_SR_" + str(SB_WIDTH) + ".npy", np_sig_SR)
 
 print("Size of cut data:")
 print("np_bg_SB shape {}".format(np_bg_SB.shape))
