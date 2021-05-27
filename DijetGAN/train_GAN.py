@@ -46,9 +46,9 @@ else:
     SAMPLE_SIZE = 20000
 
 file_prefix = "../data/processed/"
-SB_WIDTH = 1
+SB_WIDTH = 2
 
-train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2"]
+train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2", "tau32j1", "tau32j2"]
 condition_features = ["mjj"]
 
 features = train_features + condition_features
@@ -300,7 +300,7 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     fakedata = cut_data(fakedata_uncut)
     fakedata_mjj = mjj(fakedata)
     
-    f, a = plt.subplots(3, 3, constrained_layout=True)
+    f, a = plt.subplots(4, 3, constrained_layout=True)
 
     f.suptitle(title)
 
@@ -330,7 +330,7 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     a[1, 1].hist(fakedata[:,4], bins = BINS, range = (-2.5, 2.5), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
     a[1, 2].set_title("Subleading jet mass")
-    a[1, 2].set_xlabel("$m_{21J_2}$")
+    a[1, 2].set_xlabel("$m_{J_2}$")
     a[1, 2].hist(realdata[:,6], bins = BINS, range = (0, 750), color = "tab:orange", alpha = 0.5, label = label, density = True)
     a[1, 2].hist(fakedata[:,6], bins = BINS, range = (0, 750), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
     
@@ -346,14 +346,31 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
 
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
-    a[2, 2].hist(realdata[:,9], bins = BINS, range = (3100, 3900), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[2, 2].hist(realdata[:,11], bins = BINS, range = (3100, 3900), color = "tab:orange", alpha = 0.5, label = label, density = True)
     a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3100, 3900), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+
+    a[3, 0].set_title("Subleading jet angle")
+    a[3, 0].set_xlabel("$\phi_{J_2}$")
+    a[3, 0].hist(realdata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[3, 0].hist(fakedata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+
+    a[3, 1].set_title("Leading jet tau32")
+    a[3, 1].set_xlabel("$\\tau_{32J_1}$")
+    a[3, 1].hist(realdata[:,9], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[3, 1].hist(fakedata[:,9], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+
+    a[3, 2].set_title("Subleading jet tau32")
+    a[3, 2].set_xlabel("$\\tau_{32J_2}$")
+    a[3, 2].hist(realdata[:,10], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[3, 2].hist(fakedata[:,10], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
     # a[2, 2].legend(loc="right") # Too cramped
 
     if TESTING:
         plt.show()
     else:
-        plt.savefig("{}epoch{}-{}.png".format(PREFIX, epoch, mode))
+        figure = plt.gcf()
+        figure.set_size_inches(16, 9)
+        plt.savefig("{}epoch{}-{}.png".format(PREFIX, epoch, mode), bbox_inches = 'tight')
 
 
 train_gen_losses = []
@@ -380,7 +397,9 @@ def graph_mjj(generator, epoch):
     if TESTING:
         plt.show()
     else:
-        plt.savefig("{}epoch{}-mjj.png".format(PREFIX, epoch))
+        figure = plt.gcf()
+        figure.set_size_inches(16, 9)
+        plt.savefig("{}epoch{}-mjj.png".format(PREFIX, epoch), bbox_inches = 'tight')
 
 def graph_losses(epoch):
     plt.close()
@@ -404,7 +423,9 @@ def graph_losses(epoch):
     if TESTING:
         plt.show()
     else:
-        plt.savefig("{}epoch{}-loss.png".format(PREFIX, epoch))
+        figure = plt.gcf()
+        figure.set_size_inches(16, 9)
+        plt.savefig("{}epoch{}-loss.png".format(PREFIX, epoch), bbox_inches = 'tight')
 
 # TODO: Pre-train discriminator
 
