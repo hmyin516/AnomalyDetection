@@ -4,7 +4,7 @@ import gc
 
 TESTING = False
 
-SB_WIDTH = 1
+SB_WIDTH = 2
 
 filenames = {
     "herwig": "../data/events_anomalydetection_DelphesHerwig_qcd_features.h5",
@@ -14,7 +14,7 @@ filenames = {
 
 datatypes = ["herwig", "pythiabg", "pythiasig"]
 
-train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2"]
+train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2", "tau32j1", "tau32j2"]
 condition_features = ["mjj"]
 
 features = train_features + condition_features
