@@ -18,7 +18,7 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 2
-TAU32 = False
+TAU32 = True
 
 # Network hyperparameters from arXiv:1903.02433
 
