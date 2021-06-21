@@ -18,7 +18,7 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 2
-TAU32 = True
+TAU32 = False
 
 # Network hyperparameters from arXiv:1903.02433
 
@@ -71,6 +71,12 @@ np_bg_SB = np.load(file_prefix + "np_bg_SB_" + str(SB_WIDTH) + ".npy")
 np_bg_SR = np.load(file_prefix + "np_bg_SR_" + str(SB_WIDTH) + ".npy")
 np_sig_SB = np.load(file_prefix + "np_sig_SB_" + str(SB_WIDTH) + ".npy")
 np_sig_SR = np.load(file_prefix + "np_sig_SR_" + str(SB_WIDTH) + ".npy")
+
+if not TAU32:
+    np_bg_SB = np_bg_SB[:,[0,1,2,3,4,5,6,7,8,11]]
+    np_bg_SR = np_bg_SR[:,[0,1,2,3,4,5,6,7,8,11]]
+    np_sig_SB = np_sig_SB[:,[0,1,2,3,4,5,6,7,8,11]]
+    np_sig_SR = np_sig_SR[:,[0,1,2,3,4,5,6,7,8,11]]
 
 np_combined_SB = np.concatenate((np_bg_SB, np_sig_SB), axis = 0)
 np_combined_SR = np.concatenate((np_bg_SR, np_sig_SR), axis = 0)
