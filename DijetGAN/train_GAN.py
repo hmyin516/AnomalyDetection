@@ -17,11 +17,14 @@ tf.random.set_seed(1234)
 
 TESTING = False
 
+SB_WIDTH = 2
+TAU32 = True
+
 # Network hyperparameters from arXiv:1903.02433
 
 # Training
 BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
-EPOCHS = 1000 # 500000 in paper, but on much smaller dataset
+EPOCHS = 500 # 500000 in paper, but on much smaller dataset
 PRETRAIN_EPOCHS = 50
 
 # Adam hyperparameters
@@ -36,19 +39,28 @@ SGD_LEARNING_RATE = 0.01
 NOISE_DIM = 128 # 64 in Gitlab
 
 # Plotting
-PREFIX = "img/{:.0f}D-{}batchsize-".format(NOISE_DIM, BATCH_SIZE)
+PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
+if not TAU32:
+    PREFIX += "out"
+PREFIX += "_tau32-"
+
 DRAW_INTERVAL = 50
-SAVE_INTERVAL = 100
-BINS = 40
+SAVE_INTERVAL = 50
+
+BINS = 60
 if TESTING:
     SAMPLE_SIZE = 2000
 else:
     SAMPLE_SIZE = 20000
 
 file_prefix = "../data/processed/"
-SB_WIDTH = 2
 
-train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2", "tau32j1", "tau32j2"]
+
+train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2"]
+if TAU32:
+    train_features.append("tau32j1")
+    train_features.append("tau32j2")
+
 condition_features = ["mjj"]
 
 features = train_features + condition_features
@@ -66,6 +78,7 @@ np_combined_SR = np.concatenate((np_bg_SR, np_sig_SR), axis = 0)
 # Ensures all training batches have same size
 np_bg_SB_trimmed = np.delete(np_bg_SB, [i for i in range(np_bg_SB.shape[0] % (BATCH_SIZE * 4))], axis = 0)
 
+# Right now, the GAN should be optimal, since it's trained on uncontaminated background
 # TODO: train different GANs for different S/B ratios (signal contamination in sidebands)
 
 # Normalize inputs between -1 and 1, mjj between 0 and 1
@@ -346,24 +359,26 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
 
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
-    a[2, 2].hist(realdata[:,11], bins = BINS, range = (3100, 3900), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3100, 3900), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    a[2, 2].hist(realdata[:,-1], bins = BINS, range = (3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
     a[3, 0].set_title("Subleading jet angle")
-    a[3, 0].set_xlabel("$\phi_{J_2}$")
+    a[3, 0].set_xlabel("$\\phi_{J_2}$")
     a[3, 0].hist(realdata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:orange", alpha = 0.5, label = label, density = True)
     a[3, 0].hist(fakedata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
-    a[3, 1].set_title("Leading jet tau32")
-    a[3, 1].set_xlabel("$\\tau_{32J_1}$")
-    a[3, 1].hist(realdata[:,9], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[3, 1].hist(fakedata[:,9], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    if TAU32:
+        a[3, 1].set_title("Leading jet tau32")
+        a[3, 1].set_xlabel("$\\tau_{32J_1}$")
+        a[3, 1].hist(realdata[:,9], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[3, 1].hist(fakedata[:,9], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
-    a[3, 2].set_title("Subleading jet tau32")
-    a[3, 2].set_xlabel("$\\tau_{32J_2}$")
-    a[3, 2].hist(realdata[:,10], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[3, 2].hist(fakedata[:,10], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
-    # a[2, 2].legend(loc="right") # Too cramped
+        a[3, 2].set_title("Subleading jet tau32")
+        a[3, 2].set_xlabel("$\\tau_{32J_2}$")
+        a[3, 2].hist(realdata[:,10], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[3, 2].hist(fakedata[:,10], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+
+    a[3, 2].legend(loc="lower right") # cramped
 
     if TESTING:
         plt.show()
@@ -380,7 +395,7 @@ test_disc_losses = []
 
 def graph_mjj(generator, epoch):
     plt.close()
-    labels = np.linspace(3100, 3900, num = SAMPLE_SIZE)
+    labels = np.linspace(3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH, num = SAMPLE_SIZE)
     labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
 
     fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
@@ -389,7 +404,7 @@ def graph_mjj(generator, epoch):
     fakedata_mjj = mjj(fakedata)
 
     plt.title("GAN $m_{JJ}$ condition")
-    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[3100, 3900], [3100, 3900]], cmap = "inferno")
+    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH], [3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH]], cmap = "inferno")
     plt.ylabel("GAN mjj")
     plt.xlabel("Input mjj")
     plt.colorbar()
@@ -427,8 +442,6 @@ def graph_losses(epoch):
         figure.set_size_inches(16, 9)
         plt.savefig("{}epoch{}-loss.png".format(PREFIX, epoch), bbox_inches = 'tight')
 
-# TODO: Pre-train discriminator
-
 def train(dataset, testset, epochs, pretrain = False):
     for epoch in tqdm(range(epochs)):
         print_losses = False #((epoch + 1) % 10 == 0)
@@ -455,7 +468,7 @@ def train(dataset, testset, epochs, pretrain = False):
                 train_step_discriminator(vectors, labels)
             else:
                 train_disc_loss += K_eval(train_step_discriminator(vectors, labels)) / len_dataset
-                train_gen_loss += K_eval(train_step_generator(tf.constant(scaler_mjj.transform(sample_labels()), dtype = tf.float32))) / len_dataset
+                train_gen_loss += K_eval(train_step_generator(labels)) / len_dataset
 
         if not pretrain:
             train_gen_losses.append(train_gen_loss)
@@ -466,7 +479,7 @@ def train(dataset, testset, epochs, pretrain = False):
             for batchnum, test_batch in enumerate(testset):
                 vectors = test_batch[:,:-1]
                 labels = tf.reshape(test_batch[:,-1], (BATCH_SIZE,1))
-                test_gen_loss += K_eval(evaluate_generator(tf.constant(scaler_mjj.transform(sample_labels()), dtype = tf.float32))) / len_testset
+                test_gen_loss += K_eval(evaluate_generator(labels)) / len_testset
                 test_disc_loss += K_eval(evaluate_discriminator(vectors, labels)) / len_testset
 
         if not pretrain:
@@ -491,7 +504,7 @@ def train(dataset, testset, epochs, pretrain = False):
             graph_gan(generator, epoch + 1, mode = "bg_SB")
             graph_gan(generator, epoch + 1, mode = "bg_SR")
             graph_gan(generator, epoch + 1, mode = "sig_SR")
-            graph_gan(generator, epoch + 1, mode = "combined_SR")
+            #graph_gan(generator, epoch + 1, mode = "combined_SR")
             graph_mjj(generator, epoch + 1)
             graph_losses(epoch + 1)
         
