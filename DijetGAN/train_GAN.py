@@ -18,6 +18,7 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 2
+TAU21 = False
 TAU32 = True
 
 # Network hyperparameters from arXiv:1903.02433
@@ -40,6 +41,9 @@ NOISE_DIM = 128 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
+if not TAU21:
+    PREFIX += "out"
+PREFIX += "_tau21-with"
 if not TAU32:
     PREFIX += "out"
 PREFIX += "_tau32-"
@@ -56,7 +60,10 @@ else:
 file_prefix = "../data/processed/"
 
 
-train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2", "tau21j1", "tau21j2"]
+train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2"]
+if TAU21:
+    train_features.append("tau21j1")
+    train_features.append("tau21j2")
 if TAU32:
     train_features.append("tau32j1")
     train_features.append("tau32j2")
@@ -72,11 +79,21 @@ np_bg_SR = np.load(file_prefix + "np_bg_SR_" + str(SB_WIDTH) + ".npy")
 np_sig_SB = np.load(file_prefix + "np_sig_SB_" + str(SB_WIDTH) + ".npy")
 np_sig_SR = np.load(file_prefix + "np_sig_SR_" + str(SB_WIDTH) + ".npy")
 
-if not TAU32:
+if TAU21 and not TAU32:
     np_bg_SB = np_bg_SB[:,[0,1,2,3,4,5,6,7,8,11]]
     np_bg_SR = np_bg_SR[:,[0,1,2,3,4,5,6,7,8,11]]
     np_sig_SB = np_sig_SB[:,[0,1,2,3,4,5,6,7,8,11]]
     np_sig_SR = np_sig_SR[:,[0,1,2,3,4,5,6,7,8,11]]
+if TAU32 and not TAU21:
+    np_bg_SB = np_bg_SB[:,[0,1,2,3,4,5,6,9,10,11]]
+    np_bg_SR = np_bg_SR[:,[0,1,2,3,4,5,6,9,10,11]]
+    np_sig_SB = np_sig_SB[:,[0,1,2,3,4,5,6,9,10,11]]
+    np_sig_SR = np_sig_SR[:,[0,1,2,3,4,5,6,9,10,11]]
+if not TAU21 and not TAU32:
+    np_bg_SB = np_bg_SB[:,[0,1,2,3,4,5,6,11]]
+    np_bg_SR = np_bg_SR[:,[0,1,2,3,4,5,6,11]]
+    np_sig_SB = np_sig_SB[:,[0,1,2,3,4,5,6,11]]
+    np_sig_SR = np_sig_SR[:,[0,1,2,3,4,5,6,11]]
 
 np_combined_SB = np.concatenate((np_bg_SB, np_sig_SB), axis = 0)
 np_combined_SR = np.concatenate((np_bg_SR, np_sig_SR), axis = 0)
@@ -353,15 +370,16 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     a[1, 2].hist(realdata[:,6], bins = BINS, range = (0, 750), color = "tab:orange", alpha = 0.5, label = label, density = True)
     a[1, 2].hist(fakedata[:,6], bins = BINS, range = (0, 750), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
     
-    a[2, 0].set_title("Leading jet tau21")
-    a[2, 0].set_xlabel("$\\tau_{21J_1}$")
-    a[2, 0].hist(realdata[:,7], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 0].hist(fakedata[:,7], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    if TAU21:
+        a[2, 0].set_title("Leading jet tau21")
+        a[2, 0].set_xlabel("$\\tau_{21J_1}$")
+        a[2, 0].hist(realdata[:,7], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[2, 0].hist(fakedata[:,7], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
-    a[2, 1].set_title("Subleading jet tau21")
-    a[2, 1].set_xlabel("$\\tau_{21J_2}$")
-    a[2, 1].hist(realdata[:,8], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 1].hist(fakedata[:,8], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+        a[2, 1].set_title("Subleading jet tau21")
+        a[2, 1].set_xlabel("$\\tau_{21J_2}$")
+        a[2, 1].hist(realdata[:,8], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[2, 1].hist(fakedata[:,8], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
@@ -384,7 +402,7 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
         a[3, 2].hist(realdata[:,10], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
         a[3, 2].hist(fakedata[:,10], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
-    a[3, 2].legend(loc="lower right") # cramped
+    a[0, 2].legend(loc="upper right") # cramped
 
     if TESTING:
         plt.show()
