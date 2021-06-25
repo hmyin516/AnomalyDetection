@@ -391,18 +391,16 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     a[3, 0].hist(realdata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:orange", alpha = 0.5, label = label, density = True)
     a[3, 0].hist(fakedata[:,5], bins = BINS, range = (0, 2*np.pi), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
-    # TODO: I tweaked indices here as a temporary fix for running. Put correct indices later.
-
     if TAU32:
         a[3, 1].set_title("Leading jet tau32")
         a[3, 1].set_xlabel("$\\tau_{32J_1}$")
-        a[3, 1].hist(realdata[:,7], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-        a[3, 1].hist(fakedata[:,7], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+        a[3, 1].hist(realdata[:,-3], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[3, 1].hist(fakedata[:,-3], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
         a[3, 2].set_title("Subleading jet tau32")
         a[3, 2].set_xlabel("$\\tau_{32J_2}$")
-        a[3, 2].hist(realdata[:,8], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
-        a[3, 2].hist(fakedata[:,8], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+        a[3, 2].hist(realdata[:,-2], bins = BINS, range = (0, 1), color = "tab:orange", alpha = 0.5, label = label, density = True)
+        a[3, 2].hist(fakedata[:,-2], bins = BINS, range = (0, 1), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
     a[0, 2].legend(loc="upper right") # cramped
 
