@@ -18,8 +18,8 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 1
-TAU21 = False
-TAU32 = True
+TAU21 = True
+TAU32 = False
 
 # Network hyperparameters from arXiv:1903.02433
 
@@ -37,7 +37,7 @@ BETA_2 = 0.9
 SGD_LEARNING_RATE = 0.01
 
 # Architecture
-NOISE_DIM = 128 # 64 in Gitlab
+NOISE_DIM = 64 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
