@@ -117,6 +117,7 @@ def cartesian_to_detector(cart_arr):
     det_arr[:,3] = np.sqrt(cart_arr[:,3] * cart_arr[:,3] + cart_arr[:,5] * cart_arr[:,5])
     det_arr[:,4] = np.arcsinh(cart_arr[:,4] / det_arr[:,3])
     det_arr[:,5] = np.arctan2(cart_arr[:,5], cart_arr[:,3])
+    return det_arr
 
 np_bg_SB_cart = detector_to_cartesian(np_bg_SB)
 np_bg_SR_cart = detector_to_cartesian(np_bg_SR)
