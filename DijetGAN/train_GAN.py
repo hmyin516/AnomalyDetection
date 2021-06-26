@@ -7,6 +7,12 @@ import tensorflow as tf
 from tensorflow.keras import layers
 import tensorflow.keras.backend as K
 
+# From StackOverflow, specific to Google Cloud
+GOOGLECLOUD = True
+if GOOGLECLOUD:
+    import os
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 print("Using Tensorflow {}".format(tf.__version__))
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 print("{} GPUs found".format(len(physical_devices)))
