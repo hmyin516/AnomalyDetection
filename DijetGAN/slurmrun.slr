@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -C gpu
+#SBATCH -N 1
+#SBATCH -G 1
+#SBATCH -t 04:00:00
+#SBATCH -q regular
+#SBATCH -J slurmrun
+#SBATCH -A atlas
+#SBATCH --mail-user=danielcsun@hotmail.com
+#SBATCH --mail-type=ALL
+
+
+#set up environment
+module load gcc
+module load cmake
+source $HOME/miniconda2/bin/activate ad
+
+#run the application:
+cd /global/cscratch1/sd/dansun/AnomalyDetection/DijetGAN
+srun python ./train_GAN.py
