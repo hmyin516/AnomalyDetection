@@ -44,7 +44,7 @@ BETA_2 = 0.9
 SGD_LEARNING_RATE = 0.01
 
 # Architecture
-NOISE_DIM = 64 # 64 in Gitlab
+NOISE_DIM = 128 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
@@ -68,6 +68,7 @@ file_prefix = "../data/processed/"
 
 
 train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2"]
+# cart_features = ["pxj1", "pzj1", "mj1", "pxj2", "pzj2", "pyj2", "mj2"]
 if TAU21:
     train_features.append("tau21j1")
     train_features.append("tau21j2")
@@ -102,11 +103,34 @@ if not TAU21 and not TAU32:
     np_sig_SB = np_sig_SB[:,[0,1,2,3,4,5,6,11]]
     np_sig_SR = np_sig_SR[:,[0,1,2,3,4,5,6,11]]
 
+def detector_to_cartesian(det_arr):
+    cart_arr = np.copy(det_arr)
+    cart_arr[:,1] = det_arr[:,0] * np.sinh(det_arr[:,1])
+    cart_arr[:,3] = det_arr[:,3] * np.cos(det_arr[:,5])
+    cart_arr[:,4] = det_arr[:,3] * np.sinh(det_arr[:,4])
+    cart_arr[:,5] = det_arr[:,3] * np.sin(det_arr[:,5])
+    return cart_arr
+
+def cartesian_to_detector(cart_arr):
+    det_arr = np.copy(cart_arr)
+    det_arr[:,1] = np.arcsinh(cart_arr[:,1] / cart_arr[:,0])
+    det_arr[:,3] = np.sqrt(cart_arr[:,3] * cart_arr[:,3] + cart_arr[:,5] * cart_arr[:,5])
+    det_arr[:,4] = np.arcsinh(cart_arr[:,4] / det_arr[:,3])
+    det_arr[:,5] = np.arctan2(cart_arr[:,5], cart_arr[:,3])
+
+np_bg_SB_cart = detector_to_cartesian(np_bg_SB)
+np_bg_SR_cart = detector_to_cartesian(np_bg_SR)
+np_sig_SB_cart = detector_to_cartesian(np_sig_SB)
+np_sig_SR_cart = detector_to_cartesian(np_sig_SR)
+
 np_combined_SB = np.concatenate((np_bg_SB, np_sig_SB), axis = 0)
 np_combined_SR = np.concatenate((np_bg_SR, np_sig_SR), axis = 0)
 
+np_combined_SB_cart = np.concatenate((np_bg_SB_cart, np_sig_SB_cart), axis = 0)
+np_combined_SR_cart = np.concatenate((np_bg_SR_cart, np_sig_SR_cart), axis = 0)
+
 # Ensures all training batches have same size
-np_bg_SB_trimmed = np.delete(np_bg_SB, [i for i in range(np_bg_SB.shape[0] % (BATCH_SIZE * 4))], axis = 0)
+np_bg_SB_trimmed = np.delete(np_bg_SB_cart, [i for i in range(np_bg_SB_cart.shape[0] % (BATCH_SIZE * 4))], axis = 0)
 
 # Right now, the GAN should be optimal, since it's trained on uncontaminated background
 # TODO: train different GANs for different S/B ratios (signal contamination in sidebands)
@@ -337,7 +361,9 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     labels_scaled = scaler_mjj.transform(labels.reshape(-1,1))
     
     fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
-    fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
+    fakedata_uncut_cart = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
+
+    fakedata_uncut = cartesian_to_detector(fakedata_uncut_cart)
 
     # At least one jet has pT > 1200 and |eta| < 2.5
     fakedata = cut_data(fakedata_uncut)
@@ -430,7 +456,9 @@ def graph_mjj(generator, epoch):
     labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
 
     fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
-    fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
+    fakedata_uncut_cart = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
+    fakedata_uncut = cartesian_to_detector(fakedata_uncut_cart)
+
     fakedata = cut_data(fakedata_uncut)
     fakedata_mjj = mjj(fakedata)
 
