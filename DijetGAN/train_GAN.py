@@ -32,7 +32,7 @@ TAU32 = False
 
 # Training
 BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
-EPOCHS = 500 # 500000 in paper, but on much smaller dataset
+EPOCHS = 2000 # 500000 in paper, but on much smaller dataset
 PRETRAIN_EPOCHS = 50
 
 # Adam hyperparameters
@@ -44,7 +44,7 @@ BETA_2 = 0.9
 SGD_LEARNING_RATE = 0.01
 
 # Architecture
-NOISE_DIM = 256 # 64 in Gitlab
+NOISE_DIM = 128 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
@@ -55,8 +55,8 @@ if not TAU32:
     PREFIX += "out"
 PREFIX += "_tau32-"
 
-DRAW_INTERVAL = 50
-SAVE_INTERVAL = 50
+DRAW_INTERVAL = 100
+SAVE_INTERVAL = 100
 
 BINS = 60
 if TESTING:
