@@ -44,7 +44,7 @@ BETA_2 = 0.9
 SGD_LEARNING_RATE = 0.01
 
 # Architecture
-NOISE_DIM = 64 # 64 in Gitlab
+NOISE_DIM = 256 # 64 in Gitlab
 
 # Plotting
 PREFIX = "img/{:.0f}SB-with".format(SB_WIDTH)
