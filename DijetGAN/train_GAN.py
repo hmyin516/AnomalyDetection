@@ -7,6 +7,7 @@ if GOOGLECLOUD:
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from scipy.stats import truncnorm
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import tensorflow as tf
@@ -27,6 +28,7 @@ TESTING = False
 SB_WIDTH = 1
 TAU21 = True
 TAU32 = False
+GAUSSIAN = True
 
 # Network hyperparameters from arXiv:1903.02433
 
@@ -219,8 +221,14 @@ def K_eval(x):
 @tf.function
 def train_step_generator(labels):
   labels_rescaled = labels * 2 - 1
-
-  gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
+  
+  if GAUSSIAN:
+    gaussian_noise = np.array(truncnorm(-1, 1, rvs = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
+    gaussian_noise += 1
+    gaussian_noise /= 2
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+  else:
+    gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
     generated_vector = generator(gen_input, training=True)
@@ -237,7 +245,14 @@ def train_step_generator(labels):
 @tf.function
 def train_step_discriminator(vectors, labels):
   labels_rescaled = labels * 2 - 1
-  gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
+
+  if GAUSSIAN:
+    gaussian_noise = np.array(truncnorm(-1, 1, rvs = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
+    gaussian_noise += 1
+    gaussian_noise /= 2
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+  else:
+    gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
     generated_vector = generator(gen_input, training=True)
@@ -257,7 +272,14 @@ def train_step_discriminator(vectors, labels):
 @tf.function
 def evaluate_generator(labels):
   labels_rescaled = labels * 2 - 1
-  gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
+
+  if GAUSSIAN:
+    gaussian_noise = np.array(truncnorm(-1, 1, rvs = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
+    gaussian_noise += 1
+    gaussian_noise /= 2
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+  else:
+    gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
     generated_vector = generator(gen_input, training=False)
@@ -270,7 +292,14 @@ def evaluate_generator(labels):
 @tf.function
 def evaluate_discriminator(vectors, labels):
   labels_rescaled = labels * 2 - 1
-  gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
+
+  if GAUSSIAN:
+    gaussian_noise = np.array(truncnorm(-1, 1, rvs = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
+    gaussian_noise += 1
+    gaussian_noise /= 2
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+  else:
+    gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
     generated_vector = generator(gen_input, training=False)
@@ -336,7 +365,15 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
     labels = sample_labels(refdata = realdata, size = SAMPLE_SIZE) # Sample mjj from the existing distribution of mjj for comparison
     labels_scaled = scaler_mjj.transform(labels.reshape(-1,1))
     
-    fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
+    if GAUSSIAN:
+        gaussian_noise = np.array(truncnorm(-1, 1, rvs = SAMPLE_SIZE * NOISE_DIM)).reshape((SAMPLE_SIZE, NOISE_DIM))
+        gaussian_noise += 1
+        gaussian_noise /= 2
+        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels_scaled], 1)
+    else:
+        gen_input = tf.concat([tf.random.uniform([SAMPLE_SIZE, NOISE_DIM]), labels_scaled], 1)
+
+    fakedata_uncut_unscaled = generator(gen_input, training=False)
     fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
 
     # At least one jet has pT > 1200 and |eta| < 2.5
@@ -429,7 +466,15 @@ def graph_mjj(generator, epoch):
     labels = np.linspace(3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH, num = SAMPLE_SIZE)
     labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
 
-    fakedata_uncut_unscaled = generator(tf.concat([tf.random.uniform((SAMPLE_SIZE, NOISE_DIM)), labels_scaled], 1), training=False)
+    if GAUSSIAN:
+        gaussian_noise = np.array(truncnorm(-1, 1, rvs = SAMPLE_SIZE * NOISE_DIM)).reshape((SAMPLE_SIZE, NOISE_DIM))
+        gaussian_noise += 1
+        gaussian_noise /= 2
+        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels_scaled], 1)
+    else:
+        gen_input = tf.concat([tf.random.uniform([SAMPLE_SIZE, NOISE_DIM]), labels_scaled], 1)
+
+    fakedata_uncut_unscaled = generator(gen_input, training=False)
     fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1,1)), axis = 1)
     fakedata = cut_data(fakedata_uncut)
     fakedata_mjj = mjj(fakedata)
