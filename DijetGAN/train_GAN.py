@@ -226,7 +226,7 @@ def train_step_generator(labels):
     gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
     gaussian_noise += 1
     gaussian_noise /= 2
-    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels], 1)
   else:
     gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
@@ -250,7 +250,7 @@ def train_step_discriminator(vectors, labels):
     gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
     gaussian_noise += 1
     gaussian_noise /= 2
-    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels], 1)
   else:
     gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
@@ -277,7 +277,7 @@ def evaluate_generator(labels):
     gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
     gaussian_noise += 1
     gaussian_noise /= 2
-    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels], 1)
   else:
     gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
@@ -297,7 +297,7 @@ def evaluate_discriminator(vectors, labels):
     gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = BATCH_SIZE * NOISE_DIM)).reshape((BATCH_SIZE, NOISE_DIM))
     gaussian_noise += 1
     gaussian_noise /= 2
-    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels], 1)
+    gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels], 1)
   else:
     gen_input = tf.concat([tf.random.uniform([BATCH_SIZE, NOISE_DIM]), labels], 1)
 
@@ -369,7 +369,7 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
         gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = SAMPLE_SIZE * NOISE_DIM)).reshape((SAMPLE_SIZE, NOISE_DIM))
         gaussian_noise += 1
         gaussian_noise /= 2
-        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels_scaled], 1)
+        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels_scaled], 1)
     else:
         gen_input = tf.concat([tf.random.uniform([SAMPLE_SIZE, NOISE_DIM]), labels_scaled], 1)
 
@@ -470,7 +470,7 @@ def graph_mjj(generator, epoch):
         gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = SAMPLE_SIZE * NOISE_DIM)).reshape((SAMPLE_SIZE, NOISE_DIM))
         gaussian_noise += 1
         gaussian_noise /= 2
-        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise), labels_scaled], 1)
+        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels_scaled], 1)
     else:
         gen_input = tf.concat([tf.random.uniform([SAMPLE_SIZE, NOISE_DIM]), labels_scaled], 1)
 
