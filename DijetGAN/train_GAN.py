@@ -28,14 +28,14 @@ TESTING = False
 SB_WIDTH = 1
 TAU21 = True
 TAU32 = False
-GAUSSIAN = True
+GAUSSIAN = False
 
 # Network hyperparameters from arXiv:1903.02433
 
 # Training
 BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
-EPOCHS = 2000 # 500000 in paper, but on much smaller dataset
-PRETRAIN_EPOCHS = 50
+EPOCHS = 5000 # 500000 in paper, but on much smaller dataset
+PRETRAIN_EPOCHS = 100
 
 # Adam hyperparameters
 LEARNING_RATE = 1e-5 # TODO: Learning rate scheduler
@@ -63,10 +63,11 @@ SAVE_INTERVAL = 100
 BINS = 60
 if TESTING:
     SAMPLE_SIZE = 2000
+    DRAW_INTERVAL = 1
 else:
     SAMPLE_SIZE = 20000
 
-file_prefix = "../data/processed/"
+file_prefix = "../data/processed-500SR/"
 
 
 train_features = ["ptj1", "etaj1", "mj1", "ptj2", "etaj2", "phij2", "mj2"]
@@ -336,6 +337,59 @@ def cut_data(uncut_data, pTmin = 1200, etamax = 2.5):
     # Column 4: etaj2
     return uncut_data[((uncut_data[:,0] > pTmin) & (np.abs(uncut_data[:,1]) < etamax)) | ((uncut_data[:,3] > pTmin) & (np.abs(uncut_data[:,4]) < etamax))]
 
+def chisq_helper(vec1, vec2, range1, range2):
+    hist1, _ = np.histogram(vec1, bins = BINS, range = (range1, range2))
+    hist2, _ = np.histogram(vec2, bins = BINS, range = (range1, range2))
+    return np.sum((hist2 - hist1)**2 / hist1)
+
+def chisq(generator, mode):
+    if mode == "mjj":
+        labels = np.linspace(3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH, num = SAMPLE_SIZE)
+    elif mode == "sb_features":
+        labels = sample_labels(refdata = np_bg_SB, size = SAMPLE_SIZE)
+        realdata = np_bg_SB
+    else: # sr_features
+        labels = sample_labels(refdata = np_bg_SR, size = SAMPLE_SIZE)
+        realdata = np_bg_SR
+    labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
+
+    if GAUSSIAN:
+        gaussian_noise = np.array(truncnorm.rvs(-1, 1, size = SAMPLE_SIZE * NOISE_DIM)).reshape((SAMPLE_SIZE, NOISE_DIM))
+        gaussian_noise += 1
+        gaussian_noise /= 2
+        gen_input = tf.concat([tf.convert_to_tensor(gaussian_noise, dtype = tf.float32), labels_scaled], 1)
+    else:
+        gen_input = tf.concat([tf.random.uniform([SAMPLE_SIZE, NOISE_DIM]), labels_scaled], 1)
+    
+    fakedata_uncut_unscaled = generator(gen_input, training = False)
+    fakedata_uncut = np.concatenate((scaler.inverse_transform(fakedata_uncut_unscaled), labels.reshape(-1, 1)), axis = 1)
+    fakedata = cut_data(fakedata_uncut)
+    fakedata_mjj = mjj(fakedata)
+
+    chisq = 0
+
+    if mode == "mjj":
+        chisq += chisq_helper(labels, fakedata_mjj, 3250-250*SB_WIDTH, 3750+250*SB_WIDTH)
+    else:
+        chisq += chisq_helper(realdata[:,0], fakedata[:,0], 1200, 2000)
+        chisq += chisq_helper(realdata[:,1], fakedata[:,1], -2.5, 2.5)
+        chisq += chisq_helper(realdata[:,2], fakedata[:,2], 0, 750)
+        chisq += chisq_helper(realdata[:,3], fakedata[:,3], 500, 2000)
+        chisq += chisq_helper(realdata[:,4], fakedata[:,4], -2.5, 2.5)
+        chisq += chisq_helper(realdata[:,5], fakedata[:,5], 0, 2*np.pi)
+        chisq += chisq_helper(realdata[:,6], fakedata[:,6], 0, 750)
+        if TAU21:
+            chisq += chisq_helper(realdata[:,7], fakedata[:,7], 0, 1)
+            chisq += chisq_helper(realdata[:,8], fakedata[:,8], 0, 1)
+        if TAU32:
+            chisq += chisq_helper(realdata[:,-3], fakedata[:,-3], 0, 1)
+            chisq += chisq_helper(realdata[:,-2], fakedata[:,-2], 0, 1)
+        # chisq += chisq_helper(realdata[:,-1], fakedata_mjj, 3250-250*SB_WIDTH, 3750+250*SB_WIDTH)
+
+        chisq /= len(train_features)
+    
+    return chisq
+
 def graph_gan(generator, epoch, mode = "bg_SB"):
     plt.close()
 
@@ -427,8 +481,8 @@ def graph_gan(generator, epoch, mode = "bg_SB"):
 
     a[2, 2].set_title("Dijet mass")
     a[2, 2].set_xlabel("$m_{JJ}$")
-    a[2, 2].hist(realdata[:,-1], bins = BINS, range = (3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH), color = "tab:orange", alpha = 0.5, label = label, density = True)
-    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
+    a[2, 2].hist(realdata[:,-1], bins = BINS, range = (3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH), color = "tab:orange", alpha = 0.5, label = label, density = True)
+    a[2, 2].hist(fakedata_mjj, bins = BINS, range = (3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH), color = "tab:blue", histtype = "step", label = ganlabel, density = True)
 
     a[3, 0].set_title("Subleading jet angle")
     a[3, 0].set_xlabel("$\\phi_{J_2}$")
@@ -461,9 +515,13 @@ train_disc_losses = []
 test_gen_losses = []
 test_disc_losses = []
 
+chisq_sb_features = []
+chisq_sr_features = []
+chisq_mjj = []
+
 def graph_mjj(generator, epoch):
     plt.close()
-    labels = np.linspace(3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH, num = SAMPLE_SIZE)
+    labels = np.linspace(3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH, num = SAMPLE_SIZE)
     labels_scaled = scaler_mjj.transform(labels.reshape(-1, 1))
 
     if GAUSSIAN:
@@ -480,7 +538,7 @@ def graph_mjj(generator, epoch):
     fakedata_mjj = mjj(fakedata)
 
     plt.title("GAN $m_{JJ}$ condition")
-    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH], [3300 - 200 * SB_WIDTH, 3700 + 200 * SB_WIDTH]], cmap = "inferno")
+    plt.hist2d(labels, fakedata_mjj, bins = BINS, range = [[3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH], [3250 - 250 * SB_WIDTH, 3750 + 250 * SB_WIDTH]], cmap = "inferno")
     plt.ylabel("GAN mjj")
     plt.xlabel("Input mjj")
     plt.colorbar()
@@ -517,6 +575,32 @@ def graph_losses(epoch):
         figure = plt.gcf()
         figure.set_size_inches(16, 9)
         plt.savefig("{}epoch{}-loss.png".format(PREFIX, epoch), bbox_inches = 'tight')
+
+def graph_chisqs(epoch):
+    plt.close()
+
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1, constrained_layout=True)
+
+    f.suptitle("Chi-Square Statistics")
+
+    ax1.set_title("Sideband Features")
+    ax1.set_ylabel("$\\chi^2$")
+    ax1.plot(chisq_sb_features, 'b')
+
+    ax2.set_title("Signal Region Features")
+    ax2.set_ylabel("$\\chi^2$")
+    ax2.plot(chisq_sr_features, 'b')
+
+    ax3.set_title("mjj")
+    ax3.set_ylabel("$\\chi^2$")
+    ax3.plot(chisq_mjj, 'b')
+
+    if TESTING:
+        plt.show()
+    else:
+        figure = plt.gcf()
+        figure.set_size_inches(16, 9)
+        plt.savefig("{}epoch{}-chisqs.png".format(PREFIX, epoch), bbox_inches = 'tight')
 
 def train(dataset, testset, epochs, pretrain = False):
     for epoch in tqdm(range(epochs)):
@@ -561,6 +645,9 @@ def train(dataset, testset, epochs, pretrain = False):
         if not pretrain:
             test_gen_losses.append(test_gen_loss)
             test_disc_losses.append(test_disc_loss)
+            chisq_sb_features.append(chisq(generator, mode = "sb_features"))
+            chisq_sr_features.append(chisq(generator, mode = "sr_features"))
+            chisq_mjj.append(chisq(generator, mode = "mjj"))
 
         # Logging
 
@@ -583,6 +670,7 @@ def train(dataset, testset, epochs, pretrain = False):
             #graph_gan(generator, epoch + 1, mode = "combined_SR")
             graph_mjj(generator, epoch + 1)
             graph_losses(epoch + 1)
+            graph_chisqs(epoch + 1)
         
         if save_model:
             generator.save("./models/epoch{}-generator.h5".format(epoch + 1))

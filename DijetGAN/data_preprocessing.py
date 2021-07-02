@@ -78,7 +78,7 @@ else:
 # Define sidebands and signal region
 
 sr_center = 3500
-sr_width = 200
+sr_width = 250
 
 sr_left = sr_center - sr_width
 sr_right = sr_center + sr_width
@@ -122,10 +122,10 @@ del df_sig_SB
 del df_sig_SR
 gc.collect()
 
-np.save("../data/processed/np_bg_SB_" + str(SB_WIDTH) + ".npy", np_bg_SB)
-np.save("../data/processed/np_bg_SR_" + str(SB_WIDTH) + ".npy", np_bg_SR)
-np.save("../data/processed/np_sig_SB_" + str(SB_WIDTH) + ".npy", np_sig_SB)
-np.save("../data/processed/np_sig_SR_" + str(SB_WIDTH) + ".npy", np_sig_SR)
+np.save("../data/processed-500SR/np_bg_SB_" + str(SB_WIDTH) + ".npy", np_bg_SB)
+np.save("../data/processed-500SR/np_bg_SR_" + str(SB_WIDTH) + ".npy", np_bg_SR)
+np.save("../data/processed-500SR/np_sig_SB_" + str(SB_WIDTH) + ".npy", np_sig_SB)
+np.save("../data/processed-500SR/np_sig_SR_" + str(SB_WIDTH) + ".npy", np_sig_SR)
 
 print("Size of cut data:")
 print("np_bg_SB shape {}".format(np_bg_SB.shape))
