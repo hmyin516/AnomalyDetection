@@ -26,7 +26,7 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 1
-TAU21 = True
+TAU21 = False
 TAU32 = False
 GAUSSIAN = False
 
@@ -35,7 +35,10 @@ GAUSSIAN = False
 # Training
 BATCH_SIZE = 64 # 128 in paper, 32 in GitLab
 EPOCHS = 5000 # 500000 in paper, but on much smaller dataset
-PRETRAIN_EPOCHS = 100
+if TESTING:
+    PRETRAIN_EPOCHS = 1
+else:
+    PRETRAIN_EPOCHS = 100
 
 # Adam hyperparameters
 LEARNING_RATE = 1e-5 # TODO: Learning rate scheduler
@@ -340,6 +343,8 @@ def cut_data(uncut_data, pTmin = 1200, etamax = 2.5):
 def chisq_helper(vec1, vec2, range1, range2):
     hist1, _ = np.histogram(vec1, bins = BINS, range = (range1, range2))
     hist2, _ = np.histogram(vec2, bins = BINS, range = (range1, range2))
+    hist2 = hist2[hist1 > 0]
+    hist1 = hist1[hist1 > 0]
     return np.sum((hist2 - hist1)**2 / hist1)
 
 def chisq(generator, mode):
