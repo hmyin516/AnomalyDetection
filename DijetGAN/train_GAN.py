@@ -26,7 +26,7 @@ tf.random.set_seed(1234)
 TESTING = False
 
 SB_WIDTH = 1
-TAU21 = False
+TAU21 = True
 TAU32 = False
 GAUSSIAN = False
 
